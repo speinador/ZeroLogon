@@ -101,7 +101,7 @@ nxc smb [IP_DEL_DC] -u '[USUARIO_ADMINISTRADOR]' -H '[HASH_DE_ADMINISTRADOR]' --
 
 ---
 
-### 7. Restaurar la contraseña original del DC (opcional)
+### 7. Restaurar la contraseña original del DC
 
 ```bash
 python3 reinstall_original_pw.py
