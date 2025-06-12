@@ -185,3 +185,13 @@ El exploit ZeroLogon cambia la contraseña de la cuenta de máquina del controla
 ## 👤 Autor
 
 Explicación elaborada por [Sebastian Peinador](https://www.linkedin.com/in/sebastian-j-peinador/) para propósitos didácticos y de investigación en ciberseguridad ofensiva. en colaboracion con: [Daniel Delfino](https://www.linkedin.com/in/dsldelfino/),  [Diego Peinador](https://www.linkedin.com/in/peinadordiego/) y [Francisco Fariña](https://www.linkedin.com/in/francisco-farina/)
+
+---
+
+## 📄 Licencia
+
+Este material se distribuye bajo la licencia [MIT](LICENSE).
+
+---
+
+> Si te resulta útil, ¡no olvides darle ⭐ al repo o compartirlo!
